@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournoi de Poker - Timer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@400;700;900&family=Creepster&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a1a2a;
+            --bg-secondary: #1a3a4a;
+            --text-primary: #e0f7ff;
+            --accent: #4ecdc4;
+            --warning: #ff6b6b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.8s ease;
+            overflow-x: hidden;
+        }
+
+        /* Phase-specific backgrounds */
+        body.phase-zen {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+            color: #004d40;
+        }
+
+        body.phase-serious {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e94560;
+        }
+
+        body.phase-hell {
+            background: linear-gradient(135deg, #2d0a0a 0%, #4a0404 50%, #1a0000 100%);
+            color: #ff4444;
+            animation: hellPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes hellPulse {
+            0%, 100% { filter: brightness(1); }
+            50% { filter: brightness(1.2); }
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 5rem;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px currentColor;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        body.phase-hell h1 {
+            font-family: 'Creepster', cursive;
+            animation: shake 0.5s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px currentColor; }
+            to { text-shadow: 0 0 30px currentColor, 0 0 40px currentColor; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
+        }
+
+        /* Main Container */
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            max-width: 100%;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Level Display */
+        .level-display {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(15px);
+            padding: 2rem 4rem;
+            border-radius: 30px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            border: 4px solid currentColor;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            min-width: 600px;
+            transition: all 0.5s ease;
+        }
+
+        .level-number {
+            font-size: 3rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+            letter-spacing: 0.3rem;
+        }
+
+        .blinds {
+            font-size: 7rem;
+            font-weight: 900;
+            margin: 0.5rem 0;
+            text-shadow: 0 0 30px currentColor;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Timer */
+        .timer-container {
+            margin: 1rem 0;
+        }
+
+        .timer {
+            font-size: 12rem;
+            font-weight: 900;
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            text-shadow: 0 0 40px currentColor;
+            letter-spacing: 1rem;
+        }
+
+        body.phase-hell .timer {
+            animation: timerPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.1); filter: brightness(1.5); }
+        }
+
+        .timer.warning {
+            color: #ff4444;
+            animation: warningBlink 0.5s ease-in-out infinite;
+        }
+
+        @keyframes warningBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* GIF Container */
+        .gif-container {
+            width: 900px;
+            height: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 15px 60px rgba(0, 0, 0, 0.6);
+            border: 4px solid currentColor;
+            margin: 1rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+        }
+
+        .gif-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            padding: 1.2rem 3rem;
+            border: 4px solid currentColor;
+            background: rgba(0, 0, 0, 0.4);
+            color: currentColor;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.2rem;
+            font-weight: 700;
+            backdrop-filter: blur(10px);
+        }
+
+        button:hover {
+            background: currentColor;
+            color: black;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 1.5rem;
+            border: 3px solid currentColor;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: currentColor;
+            transition: width 1s linear;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            display: flex;
+            gap: 3rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 2rem 3rem;
+            border-radius: 15px;
+            border: 3px solid currentColor;
+            min-width: 250px;
+            text-align: center;
+        }
+
+        .info-label {
+            font-size: 1.4rem;
+            opacity: 0.7;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15rem;
+        }
+
+        .info-value {
+            font-size: 2.8rem;
+            font-weight: 900;
+        }
+
+        /* TV Optimized - No mobile responsive needed */
+        body {
+            min-height: 1080px;
+        }
+    </style>
+</head>
+<body class="phase-zen">
+    <header>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 2rem;">
+            <div style="font-size: 6rem; text-shadow: 0 0 20px currentColor;">♠A</div>
+            <div style="text-align: center;">
+                <h1 style="margin: 0; margin-bottom: 0.5rem;">WSOP PSO</h1>
+                <div style="font-size: 1.8rem; opacity: 0.9; font-weight: 400; letter-spacing: 0.1rem;">8-max format - 25€ buy-in</div>
+            </div>
+            <div style="font-size: 6rem; text-shadow: 0 0 20px currentColor; color: #ff4444;">♥A</div>
+        </div>
+    </header>5
+
+    <div class="container">
+        <div class="level-display">
+            <div class="level-number">NIVEAU <span id="current-level">1</span> / 20</div>
+            <div class="blinds" id="blinds-display">25 / 50</div>
+        </div>
+
+        <div class="timer-container">
+            <div class="timer" id="timer">40:00</div>
+        </div>
+
+        <div class="gif-container">
+            <img id="gif-display" src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGU0a2swOTlnYTcxZThiam5lZDFuaWJoeTBrNWpvZDRqMDVhczV6dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPlAUKTl1GeZjC8/giphy.gif" alt="Poker Meme">
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="controls">
+            <button id="start-btn">▶ Démarrer</button>
+            <button id="pause-btn" disabled>⏸ Pause</button>
+            <button id="reset-btn">↻ Réinitialiser</button>
+            <button id="skip-btn">⏭ Palier Suivant</button>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-card">
+                <div class="info-label">Temps Écoulé</div>
+                <div class="info-value" id="elapsed-time">0:00</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Durée Totale</div>
+                <div class="info-value">9h 55min</div>
+            </div>
+            <div class="info-card">
+                <div class="info-label">Prochaines Blinds</div>
+                <div class="info-value" id="next-blinds">50 / 100</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration du tournoi avec GIFs
+        const LEVELS = [
+            { level: 1, smallBlind: 25, bigBlind: 50, duration: 40 * 60, gif: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGU0a2swOTlnYTcxZThiam5lZDFuaWJoeTBrNWpvZDRqMDVhczV6dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPlAUKTl1GeZjC8/giphy.gif' },
+            { level: 2, smallBlind: 50, bigBlind: 100, duration: 20 * 60, gif: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXl0ZzI1bGNxcHB3dGNyNDB0b3RqbnB3b2U5MGZkaXMxbm13NWQ4aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPi61MmrDLzVFzq/giphy.gif' },
+            { level: 3, smallBlind: 75, bigBlind: 150, duration: 20 * 60, gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExenFqN2h4ZDczdDN4MXQyZDJ3ZTVjcTVhNWIxb3B1Y24wbTV5Z2JtaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xUNd9OzrEVokG14sbS/giphy.gif' },
+            { level: 4, smallBlind: 100, bigBlind: 200, duration: 20 * 60, gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExamFydnZ1bm9mbXJkdW9namFjdHdidWJvdmk5YncwZXd1bWJoMTdvNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26FPK0C86AJMBiZcA/giphy.gif' },
+            { level: 5, smallBlind: 150, bigBlind: 300, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3djNvZTY0emo4dmJtc25kb2xuMDUxdnc4cWlybWZyaGJodjM4Y3p6MyZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/jTrMNc8FPZntcZmSS7/giphy.gif' },
+            { level: 6, smallBlind: 200, bigBlind: 400, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3djNvZTY0emo4dmJtc25kb2xuMDUxdnc4cWlybWZyaGJodjM4Y3p6MyZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/3o6Mbif07ntYu4HkoU/giphy.gif' },
+            { level: 7, smallBlind: 300, bigBlind: 600, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzM2MDl3ejI2azg3azBrZmtrbmVzbWdiaGd6ejQ3OWlpb2p2M3M0bSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/5xtDarIN81U0KvlnzKo/giphy.gif' },
+            { level: 8, smallBlind: 400, bigBlind: 800, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzM2MDl3ejI2azg3azBrZmtrbmVzbWdiaGd6ejQ3OWlpb2p2M3M0bSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LRVnPYqM8DLag/giphy.gif' },
+            { level: 9, smallBlind: 500, bigBlind: 1000, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3lkbG9kaW1pdGl0a2F3a25mMnppbGhzd2trenRucGg0bTFweXRnaSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/AnlkXt3TaIhA1gBEDk/giphy.gif' },
+            { level: 10, smallBlind: 600, bigBlind: 1200, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ2dia2g2bG5pOWdlczg0bHk3NHI1eHQ0dnJreTB4Zms1dmJkcXpmOCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/JpG2A9P3dPHXaTYrwu/giphy.gif' },
+            { level: 11, smallBlind: 800, bigBlind: 1600, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ2dia2g2bG5pOWdlczg0bHk3NHI1eHQ0dnJreTB4Zms1dmJkcXpmOCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LCdPNT81vlv3y/giphy.gif' },
+            { level: 12, smallBlind: 1000, bigBlind: 2000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaWZwNWFwMTlham9jZDV1MmxiYXJzajBpYzlocmY5cG9nc2l3aTVkNCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LdzhWzAObvhtWAMSfj/giphy.gif' },
+            { level: 13, smallBlind: 1500, bigBlind: 3000, duration: 15 * 60, gif: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTBxcnNjams0N2IxOGJ0MjByamhhOHhreDNjazFuemo4NWFiMWxnMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yr7n0u3qzO9nG/giphy.gif' },
+            { level: 14, smallBlind: 2000, bigBlind: 4000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbGc3dXVjYzY1MGh3c2hsZWgwdGg2dWw2bHhtbGU4cTk3dTY1ZHJ0eCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/lfBKXBz4ut56BDYOHf/giphy.gif' },
+            { level: 15, smallBlind: 3000, bigBlind: 6000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXg4c280YWFlNzlva2ZiZ3ZiOGc5bzRhb29taHJ2ZXhoeWNwb3p2eiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l1J9HKqz7JPVLZKBG/giphy.gif' },
+            { level: 16, smallBlind: 4000, bigBlind: 8000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 17, smallBlind: 5000, bigBlind: 10000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 18, smallBlind: 7500, bigBlind: 15000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 19, smallBlind: 10000, bigBlind: 20000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 20, smallBlind: 15000, bigBlind: 30000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' }
+        ];
+
+        // Phrases pour chaque phase (maintenant gérées par les GIFs)
+        const PHASE_MESSAGES = {
+            zen: "Phase Zen - Le calme avant la tempête...",
+            serious: "Les choses sérieuses commencent !",
+            hell: "🔥 BIENVENUE EN ENFER ! 🔥"
+        };
+
+        // État du jeu
+        let currentLevelIndex = 0;
+        let timeRemaining = LEVELS[0].duration;
+        let isRunning = false;
+        let isPaused = false;
+        let timerInterval = null;
+        let totalElapsedTime = 0;
+
+        // Éléments DOM
+        const timerDisplay = document.getElementById('timer');
+        const blindsDisplay = document.getElementById('blinds-display');
+        const currentLevelDisplay = document.getElementById('current-level');
+        const progressBar = document.getElementById('progress-bar');
+        const elapsedTimeDisplay = document.getElementById('elapsed-time');
+        const nextBlindsDisplay = document.getElementById('next-blinds');
+        const gifDisplay = document.getElementById('gif-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const skipBtn = document.getElementById('skip-btn');
+
+        // Initialisation
+        updateDisplay();
+        updatePhase();
+
+        // Fonction pour formater le temps
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Fonction pour obtenir la phase actuelle
+        function getCurrentPhase() {
+            if (currentLevelIndex < 7) return 'zen'; // Niveaux 1-7
+            if (currentLevelIndex < 14) return 'serious'; // Niveaux 8-14
+            return 'hell'; // Niveaux 15-20
+        }
+
+        // Mise à jour de l'affichage
+        function updateDisplay() {
+            const currentLevel = LEVELS[currentLevelIndex];
+            
+            timerDisplay.textContent = formatTime(timeRemaining);
+            blindsDisplay.textContent = `${currentLevel.smallBlind.toLocaleString()} / ${currentLevel.bigBlind.toLocaleString()}`;
+            currentLevelDisplay.textContent = currentLevel.level;
+            
+            // Mise à jour des prochaines blinds
+            if (currentLevelIndex < LEVELS.length - 1) {
+                const nextLevel = LEVELS[currentLevelIndex + 1];
+                nextBlindsDisplay.textContent = `${nextLevel.smallBlind.toLocaleString()} / ${nextLevel.bigBlind.toLocaleString()}`;
+            } else {
+                nextBlindsDisplay.textContent = 'Final';
+            }
+            
+            // Mise à jour de la barre de progression
+            const progress = ((currentLevel.duration - timeRemaining) / currentLevel.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Mise à jour du temps écoulé total
+            elapsedTimeDisplay.textContent = formatTime(totalElapsedTime);
+            
+            // Avertissement visuel quand il reste moins de 30 secondes
+            if (timeRemaining <= 30 && isRunning) {
+                timerDisplay.classList.add('warning');
+            } else {
+                timerDisplay.classList.remove('warning');
+            }
+        }
+
+        // Mise à jour de la phase visuelle
+        function updatePhase() {
+            const phase = getCurrentPhase();
+            document.body.className = `phase-${phase}`;
+            
+            // Mise à jour du GIF
+            const currentLevel = LEVELS[currentLevelIndex];
+            if (currentLevel && currentLevel.gif) {
+                gifDisplay.src = currentLevel.gif;
+            }
+        }
+
+        // Annonce vocale
+        function announceLevel() {
+            // Utilisation de la synthèse vocale du navigateur
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('Messieurs, nous changeons de palier');
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
+            }
+            
+            // Son alternatif (bip) si la synthèse vocale ne fonctionne pas
+            playBeep();
+        }
+
+        // Fonction pour jouer un son de bip
+        function playBeep() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // Passage au niveau suivant
+        function nextLevel() {
+            if (currentLevelIndex < LEVELS.length - 1) {
+                currentLevelIndex++;
+                timeRemaining = LEVELS[currentLevelIndex].duration;
+                updateDisplay();
+                updatePhase();
+                announceLevel();
+            } else {
+                // Fin du tournoi
+                stopTimer();
+                alert('🏆 TOURNOI TERMINÉ ! 🏆\nFélicitations au vainqueur !');
+            }
+        }
+
+        // Timer principal
+        function tick() {
+            if (!isRunning || isPaused) return;
+            
+            timeRemaining--;
+            totalElapsedTime++;
+            updateDisplay();
+            
+            if (timeRemaining <= 0) {
+                nextLevel();
+            }
+        }
+
+        // Démarrer le timer
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                isPaused = false;
+                timerInterval = setInterval(tick, 1000);
+                startBtn.textContent = '⏸ Pause';
+                pauseBtn.disabled = false;
+                updateDisplay();
+            } else {
+                pauseTimer();
+            }
+        }
+
+        // Pause
+        function pauseTimer() {
+            isPaused = !isPaused;
+            startBtn.textContent = isPaused ? '▶ Reprendre' : '⏸ Pause';
+        }
+
+        // Arrêter le timer
+        function stopTimer() {
+            isRunning = false;
+            isPaused = false;
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            startBtn.textContent = '▶ Démarrer';
+            pauseBtn.disabled = true;
+        }
+
+        // Réinitialiser
+        function resetTimer() {
+            stopTimer();
+            currentLevelIndex = 0;
+            timeRemaining = LEVELS[0].duration;
+            totalElapsedTime = 0;
+            updateDisplay();
+            updatePhase();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', () => {
+            if (confirm('Êtes-vous sûr de vouloir réinitialiser le tournoi ?')) {
+                resetTimer();
+            }
+        });
+        skipBtn.addEventListener('click', () => {
+            if (confirm('Passer au palier suivant ?')) {
+                nextLevel();
+            }
+        });
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                startTimer();
+            } else if (e.code === 'KeyR' && e.ctrlKey) {
+                e.preventDefault();
+                resetTimer();
+            } else if (e.code === 'ArrowRight' && e.ctrlKey) {
+                e.preventDefault();
+                nextLevel();
+            }
+        });
+    </script>
+</body>
+</html>
