@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WSOP PSO - Tournament Timer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+       
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --primary: 222.2 47.4% 11.2%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 222.2 84% 4.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 212.7 26.8% 83.9%;
+        }
+
+        .destructive-theme {
+            --primary: 0 84.2% 60.2%;
+            --primary-foreground: 210 40% 98%;
+            --ring: 0 84.2% 60.2%;
+            --accent: 0 72.2% 50.6%;
+            --accent-foreground: 210 40% 98%;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 2rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 3rem;
+        }
+
+        .ace-icon {
+            font-size: 5rem;
+            font-weight: 800;
+        }
+
+        .ace-spade { color: hsl(var(--foreground)); }
+        .ace-heart { color: hsl(0 84.2% 60.2%); }
+
+        .title-group h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: -0.025em;
+            line-height: 1;
+            text-align: center;
+        }
+
+        .title-group p {
+            font-size: 1.2rem;
+            color: hsl(var(--muted-foreground));
+            margin-top: 0.75rem;
+            text-align: center;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(12, 1fr);
+        }
+
+        .col-span-3 { grid-column: span 3; }
+        .col-span-6 { grid-column: span 6; }
+
+        .card {
+            border-radius: calc(var(--radius) + 2px);
+            border: 1px solid hsl(var(--border));
+            background-color: hsl(var(--card));
+            color: hsl(var(--card-foreground));
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.375rem;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .card-content {
+            padding: 0 1.5rem 1.5rem;
+        }
+
+        .card-large {
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .timer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .level-badge {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: hsl(var(--muted-foreground));
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .timer-display {
+            font-family: 'Inter', monospace;
+            font-size: 8rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.025em;
+            font-variant-numeric: tabular-nums;
+            color: hsl(var(--foreground));
+        }
+
+        .timer-display.warning {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .blinds-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .blind-card {
+            text-align: center;
+            padding: 1rem;
+            border-radius: var(--radius);
+            background-color: hsl(var(--muted));
+        }
+
+        .blind-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: hsl(var(--muted-foreground));
+            letter-spacing: 0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        .blind-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .progress {
+            position: relative;
+            height: 0.5rem;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 9999px;
+            background-color: hsl(var(--secondary));
+            margin-top: 2rem;
+        }
+
+        .progress-indicator {
+            height: 100%;
+            width: 100%;
+            flex: 1 1 0%;
+            background-color: hsl(var(--primary));
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .info-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .info-secondary {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            margin-top: 0.5rem;
+        }
+
+        /* Prize Pool Total Card */
+        .prize-pool-total {
+            background: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 30%));
+            border: 2px solid hsl(142 76% 36%);
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: calc(var(--radius) + 2px);
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+
+        .dark .prize-pool-total {
+            background: linear-gradient(135deg, hsl(142 76% 30%), hsl(142 76% 25%));
+        }
+
+        .prize-pool-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .prize-pool-amount {
+            font-family: 'Inter', monospace;
+            font-size: 3rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .prize-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid hsl(var(--border));
+        }
+
+        .prize-item:last-child {
+            border-bottom: none;
+        }
+
+        .prize-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .medal {
+            font-size: 1.5rem;
+        }
+
+        .prize-rank {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .prize-percentage {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .prize-amount {
+            font-size: 1rem;
+            font-weight: 700;
+            color: hsl(var(--foreground));
+        }
+
+        .rebuy-timer {
+            background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--secondary)));
+            border: 2px solid hsl(var(--primary));
+            padding: 1.5rem;
+            text-align: center;
+            border-radius: calc(var(--radius) + 2px);
+        }
+
+        .dark .rebuy-timer {
+            background: linear-gradient(135deg, hsl(217.2 32.6% 20%), hsl(217.2 32.6% 17.5%));
+            border-color: hsl(30 95% 50%);
+        }
+
+        .destructive-theme .rebuy-timer {
+            background: linear-gradient(135deg, hsl(0 72.2% 20%), hsl(0 72.2% 15%));
+            border-color: hsl(0 84.2% 60.2%);
+        }
+
+        .rebuy-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 0.5rem;
+        }
+
+        .rebuy-time {
+            font-family: 'Inter', monospace;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: hsl(var(--primary));
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
+
+        .dark .rebuy-time {
+            color: hsl(30 95% 60%);
+        }
+
+        .destructive-theme .rebuy-time {
+            color: hsl(0 84.2% 60.2%);
+        }
+
+        .rebuy-status {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .rebuy-status.open {
+            color: hsl(142 76% 36%);
+        }
+
+        .rebuy-status.closed {
+            color: hsl(0 84.2% 60.2%);
+        }
+
+        /* Kill Screen */
+        .kill-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: linear-gradient(135deg, #1a4d1a 0%, #0d260d 50%, #1a4d1a 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .kill-screen.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .kill-content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .kill-title {
+            font-size: 6rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6);
+            -webkit-text-stroke: 2px #ef4444;
+            animation: glow 2s ease-in-out infinite alternate;
+            margin-bottom: 2rem;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
+            to { text-shadow: 0 0 20px rgba(239, 68, 68, 1), 0 0 40px rgba(239, 68, 68, 0.6); }
+        }
+
+        .kill-player-name {
+            font-size: 8rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 1);
+            -webkit-text-stroke: 3px #dc2626;
+            animation: pulse 1s ease-in-out infinite;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .kill-skull {
+            font-size: 8rem;
+            animation: bounce 2s ease-in-out infinite;
+            margin: 2rem 0;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        .kill-subtitle {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #f87171;
+            text-shadow: 0 0 10px rgba(248, 113, 113, 0.5);
+            letter-spacing: 0.2em;
+            margin-top: 2rem;
+        }
+
+        .kill-close {
+            margin-top: 3rem;
+            padding: 1rem 3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: #dc2626;
+            color: white;
+            border: 4px solid #f87171;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+        }
+
+        .kill-close:hover {
+            background: #b91c1c;
+            transform: scale(1.1);
+        }
+
+        .falling-item {
+            position: absolute;
+            animation: fall 4s linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .card-item {
+            width: 4rem;
+            height: 6rem;
+            background: white;
+            border-radius: 0.5rem;
+            border: 2px solid #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .chip-item {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .player-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+        }
+
+        .player-name {
+            font-size: 0.875rem;
+            flex: 1;
+        }
+
+        .rebuy-indicator {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.125rem 0.5rem;
+            background: hsl(142 76% 36%);
+            color: white;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .player-buttons {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .player-kill-btn {
+            padding: 0.5rem 1rem;
+            background: hsl(var(--destructive));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .player-kill-btn:hover {
+            background: hsl(var(--destructive) / 0.9);
+            transform: scale(1.05);
+        }
+
+        .player-kill-btn.eliminated {
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .player-rebuy-btn {
+            padding: 0.5rem 1rem;
+            background: hsl(142 76% 36%);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .player-rebuy-btn:hover {
+            background: hsl(142 76% 30%);
+            transform: scale(1.05);
+        }
+
+        .player-rebuy-btn:disabled {
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .gif-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid hsl(var(--border));
+            margin-top: 1.5rem;
+        }
+
+        .gif-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            padding: 0.625rem 1.5rem;
+            height: 2.5rem;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            background-color: hsl(var(--primary) / 0.9);
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            background-color: hsl(var(--secondary) / 0.8);
+        }
+
+        .btn-outline {
+            border: 1px solid hsl(var(--input));
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+
+        .btn-outline:hover {
+            background-color: hsl(var(--accent));
+            color: hsl(var(--accent-foreground));
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        @media (max-width: 1024px) {
+            .col-span-3, .col-span-6 { grid-column: span 12; }
+            .timer-display { font-size: 6rem; }
+            .header-left { flex-direction: column; gap: 1.5rem; }
+            .title-group h1 { font-size: 3rem; }
+            .ace-icon { font-size: 3.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-left">
+                <span class="ace-icon ace-spade">♠A</span>
+                <div class="title-group">
+                    <h1>WSOP PSO</h1>
+                    <p>8-max format - 25€ buy-in</p>
+                </div>
+                <span class="ace-icon ace-heart">♥A</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Left Column -->
+            <div class="col-span-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Temps écoulé</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-value" id="elapsedTime">00:00</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <div class="card-title">Durée totale</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-secondary">Tout dépend de quand aura lieu la TF</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <div class="rebuy-timer">
+                        <div class="rebuy-label">Recave disponible</div>
+                        <div class="rebuy-time" id="rebuyTimer">2:00:00</div>
+                        <div class="rebuy-status open" id="rebuyStatus">OUVERT</div>
+                    </div>
+                </div>
+
+                <!-- Prize Pool Total -->
+                <div style="margin-top: 1.5rem;">
+                    <div class="prize-pool-total">
+                        <div class="prize-pool-label">Prize Pool Total</div>
+                        <div class="prize-pool-amount" id="totalPrizePool">200 €</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Répartition des gains</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="prize-item">
+                            <div class="prize-left">
+                                <span class="medal">🥇</span>
+                                <span class="prize-rank">1er (60%)</span>
+                            </div>
+                            <span class="prize-amount" id="prize1">120 €</span>
+                        </div>
+                        <div class="prize-item">
+                            <div class="prize-left">
+                                <span class="medal">🥈</span>
+                                <span class="prize-rank">2ème (30%)</span>
+                            </div>
+                            <span class="prize-amount" id="prize2">60 €</span>
+                        </div>
+                        <div class="prize-item">
+                            <div class="prize-left">
+                                <span class="medal">🥉</span>
+                                <span class="prize-rank">3ème (10%)</span>
+                            </div>
+                            <span class="prize-amount" id="prize3">20 €</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Column -->
+            <div class="col-span-6">
+                <div class="card card-large">
+                    <div class="timer-container">
+                        <div class="level-badge">Niveau <span id="currentLevel">1</span> / 20</div>
+                        <div class="timer-display" id="timer">40:00</div>
+
+                        <div class="blinds-grid">
+                            <div class="blind-card">
+                                <div class="blind-label">Small Blind</div>
+                                <div class="blind-value" id="smallBlind">25</div>
+                            </div>
+                            <div class="blind-card">
+                                <div class="blind-label">Big Blind</div>
+                                <div class="blind-value" id="bigBlind">50</div>
+                            </div>
+                        </div>
+
+                        <div class="progress">
+                            <div class="progress-indicator" id="progressBar" style="width: 100%"></div>
+                        </div>
+
+                        <div class="button-group">
+                            <button class="btn btn-primary" id="startBtn">Démarrer</button>
+                            <button class="btn btn-secondary" id="pauseBtn">Pause</button>
+                            <button class="btn btn-outline" id="nextBtn">Niveau suivant</button>
+                            <button class="btn btn-outline" id="resetBtn">Reset</button>
+                        </div>
+
+                        <div class="gif-container">
+                            <img id="gifDisplay" src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGU0a2swOTlnYTcxZThiam5lZDFuaWJoeTBrNWpvZDRqMDVhczV6dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPlAUKTl1GeZjC8/giphy.gif" alt="Poker">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-span-3">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Prochain niveau</div>
+                    </div>
+                    <div class="card-content">
+                        <div class="info-secondary">Blinds</div>
+                        <div class="info-value">
+                            <span id="nextSmallBlind">50</span> / <span id="nextBigBlind">100</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <div class="card-title">Joueurs</div>
+                    </div>
+                    <div class="card-content">
+                        <div id="playersList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kill Screen -->
+    <div class="kill-screen" id="killScreen">
+        <div id="fallingCards"></div>
+        <div id="fallingChips"></div>
+        <div class="kill-content">
+            <div class="kill-player-name" id="killedPlayerName">KILLED</div>
+            <div class="kill-title">YOU HAVE BEEN KILLED</div>
+            <div class="kill-skull">💀</div>
+            <div class="kill-subtitle">T'ES NASE TROU DUC</div>
+            <button class="kill-close" onclick="closeKillScreen()">✕ FERMER</button>
+        </div>
+    </div>
+
+    <script>
+        const LEVELS = [
+            { level: 1, smallBlind: 25, bigBlind: 50, duration: 40 * 60, gif: 'https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGU0a2swOTlnYTcxZThiam5lZDFuaWJoeTBrNWpvZDRqMDVhczV6dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPlAUKTl1GeZjC8/giphy.gif' },
+            { level: 2, smallBlind: 50, bigBlind: 100, duration: 20 * 60, gif: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXl0ZzI1bGNxcHB3dGNyNDB0b3RqbnB3b2U5MGZkaXMxbm13NWQ4aCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xT9DPi61MmrDLzVFzq/giphy.gif' },
+            { level: 3, smallBlind: 75, bigBlind: 150, duration: 20 * 60, gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExenFqN2h4ZDczdDN4MXQyZDJ3ZTVjcTVhNWIxb3B1Y24wbTV5Z2JtaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xUNd9OzrEVokG14sbS/giphy.gif' },
+            { level: 4, smallBlind: 100, bigBlind: 200, duration: 20 * 60, gif: 'https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExamFydnZ1bm9mbXJkdW9namFjdHdidWJvdmk5YncwZXd1bWJoMTdvNiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26FPK0C86AJMBiZcA/giphy.gif' },
+            { level: 5, smallBlind: 150, bigBlind: 300, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3djNvZTY0emo4dmJtc25kb2xuMDUxdnc4cWlybWZyaGJodjM4Y3p6MyZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/jTrMNc8FPZntcZmSS7/giphy.gif' },
+            { level: 6, smallBlind: 200, bigBlind: 400, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3djNvZTY0emo4dmJtc25kb2xuMDUxdnc4cWlybWZyaGJodjM4Y3p6MyZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/3o6Mbif07ntYu4HkoU/giphy.gif' },
+            { level: 7, smallBlind: 300, bigBlind: 600, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzM2MDl3ejI2azg3azBrZmtrbmVzbWdiaGd6ejQ3OWlpb2p2M3M0bSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/5xtDarIN81U0KvlnzKo/giphy.gif' },
+            { level: 8, smallBlind: 400, bigBlind: 800, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbzM2MDl3ejI2azg3azBrZmtrbmVzbWdiaGd6ejQ3OWlpb2p2M3M0bSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LRVnPYqM8DLag/giphy.gif' },
+            { level: 9, smallBlind: 500, bigBlind: 1000, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExb3lkbG9kaW1pdGl0a2F3a25mMnppbGhzd2trenRucGg0bTFweXRnaSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/AnlkXt3TaIhA1gBEDk/giphy.gif' },
+            { level: 10, smallBlind: 600, bigBlind: 1200, duration: 20 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ2dia2g2bG5pOWdlczg0bHk3NHI1eHQ0dnJreTB4Zms1dmJkcXpmOCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/JpG2A9P3dPHXaTYrwu/giphy.gif' },
+            { level: 11, smallBlind: 800, bigBlind: 1600, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZ2dia2g2bG5pOWdlczg0bHk3NHI1eHQ0dnJreTB4Zms1dmJkcXpmOCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LCdPNT81vlv3y/giphy.gif' },
+            { level: 12, smallBlind: 1000, bigBlind: 2000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaWZwNWFwMTlham9jZDV1MmxiYXJzajBpYzlocmY5cG9nc2l3aTVkNCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/LdzhWzAObvhtWAMSfj/giphy.gif' },
+            { level: 13, smallBlind: 1500, bigBlind: 3000, duration: 15 * 60, gif: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZTBxcnNjams0N2IxOGJ0MjByamhhOHhreDNjazFuemo4NWFiMWxnMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/yr7n0u3qzO9nG/giphy.gif' },
+            { level: 14, smallBlind: 2000, bigBlind: 4000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbGc3dXVjYzY1MGh3c2hsZWgwdGg2dWw2bHhtbGU4cTk3dTY1ZHJ0eCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/lfBKXBz4ut56BDYOHf/giphy.gif' },
+            { level: 15, smallBlind: 3000, bigBlind: 6000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXg4c280YWFlNzlva2ZiZ3ZiOGc5bzRhb29taHJ2ZXhoeWNwb3p2eiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/l1J9HKqz7JPVLZKBG/giphy.gif' },
+            { level: 16, smallBlind: 4000, bigBlind: 8000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 17, smallBlind: 5000, bigBlind: 10000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 18, smallBlind: 7500, bigBlind: 15000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 19, smallBlind: 10000, bigBlind: 20000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' },
+            { level: 20, smallBlind: 15000, bigBlind: 30000, duration: 15 * 60, gif: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHFjOHpkd3kwN2ttcWxwanVkcmk2YngwczNnbWYwem84c2VtcTh2aiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/koPSBhdvbCD4c/giphy.gif' }
+        ];
+
+        const players = [
+            { name: 'Amo', rebuys: 0, eliminated: false },
+            { name: 'Jérôme', rebuys: 0, eliminated: false },
+            { name: 'Benjamin', rebuys: 0, eliminated: false },
+            { name: 'Marquis', rebuys: 0, eliminated: false },
+            { name: 'Gody', rebuys: 0, eliminated: false },
+            { name: 'Val', rebuys: 0, eliminated: false },
+            { name: 'Max', rebuys: 0, eliminated: false },
+            { name: 'Toinou', rebuys: 0, eliminated: false }
+        ];
+
+        const BUY_IN = 25;
+        const INITIAL_PLAYERS = 8;
+        let totalPrizePool = INITIAL_PLAYERS * BUY_IN; // 200€
+
+        let currentLevelIndex = 0;
+        let timeRemaining = LEVELS[0].duration;
+        let totalElapsed = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let rebuyTimeRemaining = 2 * 60 * 60;
+        let rebuyActive = true;
+
+        function updatePrizePool() {
+            document.getElementById('totalPrizePool').textContent = totalPrizePool + ' €';
+            document.getElementById('prize1').textContent = Math.floor(totalPrizePool * 0.6) + ' €';
+            document.getElementById('prize2').textContent = Math.floor(totalPrizePool * 0.3) + ' €';
+            document.getElementById('prize3').textContent = Math.floor(totalPrizePool * 0.1) + ' €';
+        }
+
+        function renderPlayers() {
+            const playersList = document.getElementById('playersList');
+            playersList.innerHTML = '';
+
+            players.forEach(player => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-item';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'player-name';
+                nameSpan.id = `player-${player.name.toLowerCase()}`;
+                nameSpan.textContent = player.name;
+                
+                if (player.rebuys > 0) {
+                    const rebuyBadge = document.createElement('span');
+                    rebuyBadge.className = 'rebuy-indicator';
+                    rebuyBadge.textContent = `♻️ ${player.rebuys}x`;
+                    nameSpan.appendChild(rebuyBadge);
+                }
+
+                if (player.eliminated) {
+                    nameSpan.style.textDecoration = 'line-through';
+                    nameSpan.style.opacity = '0.5';
+                }
+
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'player-buttons';
+
+                const rebuyBtn = document.createElement('button');
+                rebuyBtn.className = 'player-rebuy-btn';
+                rebuyBtn.id = `rebuy-btn-${player.name.toLowerCase()}`;
+                rebuyBtn.textContent = '♻️ RECAVE';
+                rebuyBtn.disabled = !rebuyActive || player.eliminated;
+                rebuyBtn.onclick = () => rebuyPlayer(player.name);
+
+                const killBtn = document.createElement('button');
+                killBtn.className = 'player-kill-btn';
+                killBtn.id = `kill-btn-${player.name.toLowerCase()}`;
+                killBtn.textContent = player.eliminated ? '☠️ OUT' : '💀 KILL';
+                if (player.eliminated) killBtn.classList.add('eliminated');
+                killBtn.onclick = () => killPlayer(player.name);
+
+                buttonsDiv.appendChild(rebuyBtn);
+                buttonsDiv.appendChild(killBtn);
+
+                playerDiv.appendChild(nameSpan);
+                playerDiv.appendChild(buttonsDiv);
+                playersList.appendChild(playerDiv);
+            });
+        }
+
+        function rebuyPlayer(playerName) {
+            if (!rebuyActive || rebuyTimeRemaining <= 0) {
+                alert('La période de recave est terminée !');
+                return;
+            }
+
+            const player = players.find(p => p.name === playerName);
+            if (!player || player.eliminated) {
+                alert(playerName + ' ne peut pas recaver (éliminé ou inexistant)');
+                return;
+            }
+
+            player.rebuys++;
+            totalPrizePool += BUY_IN;
+            updatePrizePool();
+            renderPlayers();
+        }
+
+        function killPlayer(playerName) {
+            const player = players.find(p => p.name === playerName);
+            if (!player || player.eliminated) return;
+
+            player.eliminated = true;
+            
+            const killScreen = document.getElementById('killScreen');
+            const killedPlayerName = document.getElementById('killedPlayerName');
+            killedPlayerName.textContent = playerName.toUpperCase();
+            killScreen.classList.add('active');
+
+            createFallingItems();
+            playKillSound();
+            renderPlayers();
+
+            setTimeout(() => closeKillScreen(), 5000);
+        }
+
+        function updateDisplay() {
+            const level = LEVELS[currentLevelIndex];
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            
+            document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('currentLevel').textContent = level.level;
+            document.getElementById('smallBlind').textContent = level.smallBlind.toLocaleString();
+            document.getElementById('bigBlind').textContent = level.bigBlind.toLocaleString();
+            document.getElementById('gifDisplay').src = level.gif;
+            
+            if (currentLevelIndex < LEVELS.length - 1) {
+                const nextLevel = LEVELS[currentLevelIndex + 1];
+                document.getElementById('nextSmallBlind').textContent = nextLevel.smallBlind.toLocaleString();
+                document.getElementById('nextBigBlind').textContent = nextLevel.bigBlind.toLocaleString();
+            }
+            
+            document.getElementById('progressBar').style.width = ((timeRemaining / level.duration) * 100) + '%';
+            
+            const elapsedMinutes = Math.floor(totalElapsed / 60);
+            const elapsedSeconds = totalElapsed % 60;
+            document.getElementById('elapsedTime').textContent = `${elapsedMinutes.toString().padStart(2, '0')}:${elapsedSeconds.toString().padStart(2, '0')}`;
+            
+            if (rebuyActive && rebuyTimeRemaining > 0) {
+                const rebuyHours = Math.floor(rebuyTimeRemaining / 3600);
+                const rebuyMinutes = Math.floor((rebuyTimeRemaining % 3600) / 60);
+                const rebuySeconds = rebuyTimeRemaining % 60;
+                document.getElementById('rebuyTimer').textContent = `${rebuyHours}:${rebuyMinutes.toString().padStart(2, '0')}:${rebuySeconds.toString().padStart(2, '0')}`;
+            } else if (rebuyTimeRemaining <= 0 && rebuyActive) {
+                rebuyActive = false;
+                document.getElementById('rebuyTimer').textContent = '0:00:00';
+                document.getElementById('rebuyStatus').textContent = 'FERMÉ';
+                document.getElementById('rebuyStatus').classList.remove('open');
+                document.getElementById('rebuyStatus').classList.add('closed');
+                renderPlayers();
+            }
+            
+            updatePhase();
+        }
+
+        function updatePhase() {
+            const level = LEVELS[currentLevelIndex].level;
+            document.body.classList.remove('dark', 'destructive-theme');
+            if (level > 7 && level <= 14) document.body.classList.add('dark');
+            else if (level > 14) document.body.classList.add('dark', 'destructive-theme');
+        }
+
+        function tick() {
+            if (timeRemaining > 0) {
+                timeRemaining--;
+                totalElapsed++;
+                if (rebuyActive && rebuyTimeRemaining > 0) rebuyTimeRemaining--;
+                updateDisplay();
+                if (timeRemaining === 0) {
+                    playSound();
+                    announce();
+                }
+            } else {
+                nextLevel();
+            }
+        }
+
+        function nextLevel() {
+            if (currentLevelIndex < LEVELS.length - 1) {
+                currentLevelIndex++;
+                timeRemaining = LEVELS[currentLevelIndex].duration;
+                updateDisplay();
+            } else {
+                pause();
+                alert('Tournoi terminé !');
+            }
+        }
+
+        function start() {
+            if (!isRunning) {
+                isRunning = true;
+                timerInterval = setInterval(tick, 1000);
+                document.getElementById('startBtn').textContent = 'En cours...';
+            }
+        }
+
+        function pause() {
+            isRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('startBtn').textContent = 'Reprendre';
+        }
+
+        function reset() {
+            pause();
+            currentLevelIndex = 0;
+            timeRemaining = LEVELS[0].duration;
+            totalElapsed = 0;
+            rebuyTimeRemaining = 2 * 60 * 60;
+            rebuyActive = true;
+            totalPrizePool = INITIAL_PLAYERS * BUY_IN;
+            players.forEach(p => { p.rebuys = 0; p.eliminated = false; });
+            updatePrizePool();
+            renderPlayers();
+            document.getElementById('rebuyStatus').textContent = 'OUVERT';
+            document.getElementById('rebuyStatus').classList.remove('closed');
+            document.getElementById('rebuyStatus').classList.add('open');
+            updateDisplay();
+            document.getElementById('startBtn').textContent = 'Démarrer';
+        }
+
+        function playSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 800;
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function announce() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance('Messieurs, nous changeons de palier');
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.9;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        const cardSymbols = ['♠', '♥', '♦', '♣'];
+        const chipColors = ['#e53e3e', '#3182ce', '#38a169', '#000000'];
+
+        function createFallingItems() {
+            const cardsContainer = document.getElementById('fallingCards');
+            const chipsContainer = document.getElementById('fallingChips');
+            cardsContainer.innerHTML = '';
+            chipsContainer.innerHTML = '';
+            
+            for (let i = 0; i < 15; i++) {
+                const card = document.createElement('div');
+                card.className = 'falling-item card-item';
+                card.style.left = Math.random() * 100 + '%';
+                card.style.animationDelay = Math.random() * 2 + 's';
+                card.style.animationDuration = (3 + Math.random() * 2) + 's';
+                card.textContent = cardSymbols[Math.floor(Math.random() * 4)];
+                cardsContainer.appendChild(card);
+            }
+            
+            for (let i = 0; i < 20; i++) {
+                const chip = document.createElement('div');
+                chip.className = 'falling-item chip-item';
+                chip.style.left = Math.random() * 100 + '%';
+                chip.style.animationDelay = Math.random() * 2.5 + 's';
+                chip.style.animationDuration = (3.5 + Math.random() * 2) + 's';
+                chip.style.background = chipColors[Math.floor(Math.random() * 4)];
+                chip.textContent = '$';
+                chipsContainer.appendChild(chip);
+            }
+        }
+
+        function playKillSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function closeKillScreen() {
+            document.getElementById('killScreen').classList.remove('active');
+        }
+
+        document.getElementById('startBtn').addEventListener('click', start);
+        document.getElementById('pauseBtn').addEventListener('click', pause);
+        document.getElementById('resetBtn').addEventListener('click', reset);
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            timeRemaining = 0;
+            tick();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                isRunning ? pause() : start();
+            } else if (e.ctrlKey && e.code === 'ArrowRight') {
+                e.preventDefault();
+                timeRemaining = 0;
+                tick();
+            } else if (e.ctrlKey && e.code === 'KeyR') {
+                e.preventDefault();
+                reset();
+            } else if (e.key === 'Escape') {
+                closeKillScreen();
+            }
+        });
+
+        updatePrizePool();
+        renderPlayers();
+        updateDisplay();
+    </script>
+</body>
+</html>
